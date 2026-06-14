@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0b6e3b" />
+  <meta name="description" content="Link It FC — the footballer name-chain game. Can you link it?" />
+  <title>Link It FC ⚽ — Can you link it?</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="app">
+
+    <!-- ============ HOME ============ -->
+    <section id="screen-home" class="screen active">
+      <header class="hero">
+        <div class="ball">⚽</div>
+        <h1>Link&nbsp;It&nbsp;<span class="fc">FC</span></h1>
+        <p class="tagline">Can you link it?</p>
+        <p class="subtagline">Link it or lose it! Each new footballer must start with the first letter of the last one's surname.</p>
+      </header>
+
+      <div class="stats">
+        <div class="stat"><span class="stat-num" id="home-streak">0</span><span class="stat-label">🔥 day streak</span></div>
+        <div class="stat"><span class="stat-num" id="home-best">0</span><span class="stat-label">⛓ best chain</span></div>
+      </div>
+
+      <div class="menu">
+        <button class="btn btn-primary" id="play-daily">
+          <span class="btn-title" id="daily-title">Today's Challenge</span>
+          <span class="btn-sub" id="daily-sub">Daily · 30s per name</span>
+        </button>
+        <button class="btn btn-ghost" id="play-free">
+          <span class="btn-title">Free Play</span>
+          <span class="btn-sub">Practice anytime</span>
+        </button>
+        <button class="btn btn-link" id="how-to-btn">How to play</button>
+      </div>
+
+      <footer class="credit">Name it. Link it.</footer>
+    </section>
+
+    <!-- ============ FREE PLAY SETUP ============ -->
+    <section id="screen-free" class="screen">
+      <button class="back" data-go="home">‹ Back</button>
+      <h2>Free Play</h2>
+      <p class="muted">Practice as much as you like — chase your best chain.</p>
+
+      <div class="choice-list">
+        <button class="btn btn-primary choice" data-free="timed">
+          <span class="btn-title">⏱️ Timed</span>
+          <span class="btn-sub">30 seconds per name</span>
+        </button>
+        <button class="btn btn-primary choice" data-free="zen">
+          <span class="btn-title">🧘 No timer</span>
+          <span class="btn-sub">Take all the time you want</span>
+        </button>
+      </div>
+
+      <p class="hi">Best chain: <strong id="free-best">0</strong></p>
+    </section>
+
+    <!-- ============ GAME ============ -->
+    <section id="screen-game" class="screen">
+      <div class="game-top">
+        <button class="back" data-go="home">‹ Quit</button>
+        <div id="turn-label" class="turn-label">Link It</div>
+        <div id="score-pill" class="score-pill">🔗 <span id="chain-count">0</span></div>
+      </div>
+
+      <div class="timer-row" id="timer-wrap">
+        <div class="timer-track">
+          <div id="timer-bar" class="timer-bar"></div>
+        </div>
+        <span id="timer-text" class="timer-text">30s</span>
+      </div>
+
+      <div class="play-area">
+        <div class="prompt">
+          <div class="letter-badge">
+            <span class="letter-badge-label">next name starts with</span>
+            <span id="required-letter" class="letter-badge-letter">?</span>
+          </div>
+        </div>
+
+        <div class="last-played" id="last-played"></div>
+
+        <div class="input-zone">
+          <input id="guess-input" type="text" placeholder="Type a footballer…"
+                 autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" />
+          <div id="message" class="message"></div>
+          <div class="actions">
+            <button id="submit-guess" class="btn btn-primary">Link it</button>
+            <button id="giveup" class="btn btn-ghost">End run</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="chain-history">
+        <div class="chain-history-title">Your chain</div>
+        <ol id="chain-list"></ol>
+      </div>
+    </section>
+
+    <!-- ============ RESULT ============ -->
+    <section id="screen-result" class="screen">
+      <div class="over-card">
+        <div id="result-emoji" class="over-emoji">🏁</div>
+        <h2 id="result-title">Run over</h2>
+        <p id="result-detail" class="muted"></p>
+        <div id="result-score" class="big-score">0</div>
+        <p id="result-scorelabel" class="muted score-label">names linked</p>
+
+        <div id="result-share" class="share-card hidden">
+          <pre id="share-text" class="share-text"></pre>
+          <button id="copy-share" class="btn btn-primary">📋 Copy result</button>
+          <p id="copy-confirm" class="copy-confirm hidden">Copied!</p>
+        </div>
+
+        <div class="over-actions">
+          <button id="result-again" class="btn btn-primary">Play again</button>
+          <button class="btn btn-ghost" data-go="home">Home</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ HOW TO PLAY ============ -->
+    <section id="screen-how" class="screen">
+      <button class="back" data-go="home">‹ Back</button>
+      <h2>How to play</h2>
+      <div class="how">
+        <p>You're given a footballer, e.g. <strong>David <u>B</u>eckham</strong>.</p>
+        <p>The first letter of the <em>surname</em> ( <strong>B</strong> ) starts the next name: <strong><u>B</u>ryan Robson</strong>.</p>
+        <p>Then <strong>R</strong>obson → <strong><u>R</u>ob Green</strong>, then <strong>G</strong>reen → … keep the chain going!</p>
+        <ul>
+          <li>No repeats — each footballer can only be linked once.</li>
+          <li>We're the ref: we check the name's real and the letter fits.</li>
+          <li><strong>Timed:</strong> 30 seconds per name. Blank for too long and the run ends.</li>
+          <li><strong>Today's Challenge:</strong> the same starter for everyone, one go a day. Play daily to build your 🔥 streak.</li>
+        </ul>
+      </div>
+      <button class="btn btn-primary" data-go="home">Got it</button>
+    </section>
+
+  </div>
+
+  <script src="js/players.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
