@@ -35,13 +35,22 @@
     return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   }
 
-  /* ---------- Database (dedupe, keep nice display names) ---------- */
+  /* ---------- Database ----------
+     Validation pool = STARTERS + SQUAD (any of these names is accepted).
+     Seed pool       = STARTERS only (so chains never START on an obscure name). */
   const byNorm = new Map(); // normalized -> display name
-  PLAYERS.forEach((name) => {
+  [].concat(STARTERS, SQUAD).forEach((name) => {
     const key = normalize(name);
     if (key && !byNorm.has(key)) byNorm.set(key, name.trim());
   });
-  const ALL = Array.from(byNorm.values());
+  const ALL = Array.from(byNorm.values()); // full validation pool
+
+  const seedSeen = new Set();
+  const SEEDS = []; // curated starters, deduped, as stored display names
+  STARTERS.forEach((name) => {
+    const key = normalize(name);
+    if (key && !seedSeen.has(key)) { seedSeen.add(key); SEEDS.push(byNorm.get(key)); }
+  });
 
   /* ---------- Persistent store ---------- */
   const KEY = "linkit.v1";
@@ -76,8 +85,8 @@
   // Deterministic seed name for the day — same for everyone on this version.
   function dailyStartName() {
     const n = dailyNumber();
-    const idx = ((n * 9973) % ALL.length + ALL.length) % ALL.length;
-    return ALL[idx];
+    const idx = ((n * 9973) % SEEDS.length + SEEDS.length) % SEEDS.length;
+    return SEEDS[idx];
   }
   function dailyDoneToday() {
     return store.todayResult && store.todayResult.date === todayStr();
@@ -98,7 +107,7 @@
   let game = null;
 
   function startGame(mode, timed) {
-    const seed = mode === "daily" ? dailyStartName() : ALL[Math.floor(Math.random() * ALL.length)];
+    const seed = mode === "daily" ? dailyStartName() : SEEDS[Math.floor(Math.random() * SEEDS.length)];
     game = {
       mode,            // "daily" | "free"
       timed,           // boolean

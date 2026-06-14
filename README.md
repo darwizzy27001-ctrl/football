@@ -44,19 +44,38 @@ Link It FC ⚽ #142
 Can you link it?
 ```
 
+## Where the names come from
+
+`js/players.js` holds two pools:
+
+- **`STARTERS`** — a hand-curated set of well-known players (~285). These seed
+  the daily/free-play chain, so you never *start* on an obscure name.
+- **`SQUAD`** — every player from **World Cup 1970+, the Euros and Copa
+  América** (~5,000), sourced from the public-domain
+  [openfootball](https://github.com/openfootball) dataset.
+
+Both pools together form the **validation list**: type any real player from
+either and it's accepted (accents optional). The big SQUAD pool means knowing
+an obscure-but-real player is rewarded rather than rejected.
+
 ## Project layout
 
 ```
 index.html      # screens & markup
 css/styles.css  # mobile-first pitch-themed styling
-js/players.js   # the footballer database — add names here
+js/players.js   # the footballer database (STARTERS + SQUAD)
 js/game.js      # game logic (chaining, timer, daily, streaks, sharing)
 ```
 
 ## Add more players
 
-Open `js/players.js` and add full names to the `PLAYERS` list. The game treats
-the **last word** as the surname and deduplicates automatically.
+Open `js/players.js`. Add memorable names to `STARTERS` (eligible as chain
+starters) or any real player to `SQUAD` (validation only). The game treats the
+**last word** as the surname and deduplicates automatically.
+
+## Credits
+
+Player data: [openfootball](https://github.com/openfootball) (public domain).
 
 ## On the roadmap (post-v1)
 
