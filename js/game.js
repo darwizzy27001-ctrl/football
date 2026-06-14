@@ -1,14 +1,16 @@
 /* ===========================================================
-   Footy Chain — game logic
+   Link It FC — game logic
+   Modes: Today's Challenge (seeded daily + streak) and Free Play.
    =========================================================== */
 (function () {
   "use strict";
 
-  /* ---------- Helpers ---------- */
+  /* ---------- DOM helpers ---------- */
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
-  // Strip accents, lower-case, collapse whitespace — used for matching.
+  /* ---------- Text helpers ---------- */
+  // Strip accents, lower-case, collapse punctuation/whitespace — for matching.
   function normalize(s) {
     return s
       .normalize("NFD")
@@ -18,21 +20,22 @@
       .replace(/\s+/g, " ")
       .trim();
   }
-
   // First letter of the whole name (the letter the chain must continue from).
   function firstLetter(name) {
     const n = normalize(name);
     return n ? n[0].toUpperCase() : "";
   }
-
-  // First letter of the surname (the last word) — this seeds the next turn.
+  // First letter of the surname (last word) — seeds the next turn.
   function surnameLetter(name) {
     const parts = normalize(name).split(" ");
     const last = parts[parts.length - 1] || "";
     return last ? last[0].toUpperCase() : "";
   }
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
 
-  /* ---------- Build the database (dedupe, keep nice display names) ---------- */
+  /* ---------- Database (dedupe, keep nice display names) ---------- */
   const byNorm = new Map(); // normalized -> display name
   PLAYERS.forEach((name) => {
     const key = normalize(name);
@@ -40,10 +43,50 @@
   });
   const ALL = Array.from(byNorm.values());
 
-  /* ---------- High score ---------- */
-  const HS_KEY = "footyChain.best";
-  const getBest = () => parseInt(localStorage.getItem(HS_KEY) || "0", 10);
-  const setBest = (v) => localStorage.setItem(HS_KEY, String(v));
+  /* ---------- Persistent store ---------- */
+  const KEY = "linkit.v1";
+  const store = loadStore();
+  function loadStore() {
+    try {
+      return Object.assign(
+        { streak: 0, lastDaily: null, bestDaily: 0, bestChain: 0, todayResult: null },
+        JSON.parse(localStorage.getItem(KEY) || "{}")
+      );
+    } catch (e) {
+      return { streak: 0, lastDaily: null, bestDaily: 0, bestChain: 0, todayResult: null };
+    }
+  }
+  function saveStore() {
+    try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {}
+  }
+
+  /* ---------- Dates / daily ---------- */
+  const EPOCH = new Date(2026, 0, 1); // launch day = Daily #1
+  function dateStr(d) {
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+  function todayStr() { return dateStr(new Date()); }
+  function yesterdayStr() { const d = new Date(); d.setDate(d.getDate() - 1); return dateStr(d); }
+  function dailyNumber() {
+    const t = new Date();
+    const a = Date.UTC(t.getFullYear(), t.getMonth(), t.getDate());
+    const b = Date.UTC(EPOCH.getFullYear(), EPOCH.getMonth(), EPOCH.getDate());
+    return Math.round((a - b) / 86400000) + 1;
+  }
+  // Deterministic seed name for the day — same for everyone on this version.
+  function dailyStartName() {
+    const n = dailyNumber();
+    const idx = ((n * 9973) % ALL.length + ALL.length) % ALL.length;
+    return ALL[idx];
+  }
+  function dailyDoneToday() {
+    return store.todayResult && store.todayResult.date === todayStr();
+  }
+  // Streak only counts if the last daily was today or yesterday.
+  function currentStreak() {
+    if (store.lastDaily === todayStr() || store.lastDaily === yesterdayStr()) return store.streak || 0;
+    return 0;
+  }
 
   /* ---------- Screen navigation ---------- */
   function show(id) {
@@ -52,49 +95,54 @@
   }
 
   /* ---------- Game state ---------- */
-  let state = null;
+  let game = null;
 
-  function newState(mode, players, secondsPerTurn) {
-    return {
-      mode, // "solo" | "pass"
-      players, // [{name, alive}]
-      current: 0, // index into players
-      used: new Set(), // normalized names already played
-      chain: [], // [{name, who}]
-      requiredLetter: null, // null = anything goes (first move)
-      seconds: secondsPerTurn,
-      timeLeft: secondsPerTurn,
+  function startGame(mode, timed) {
+    const seed = mode === "daily" ? dailyStartName() : ALL[Math.floor(Math.random() * ALL.length)];
+    game = {
+      mode,            // "daily" | "free"
+      timed,           // boolean
+      seconds: 60,
+      timeLeft: 60,
       timer: null,
+      seed,
+      used: new Set([normalize(seed)]),
+      chain: [{ name: seed, seed: true }],
+      requiredLetter: surnameLetter(seed),
+      score: 0,        // names the player has linked (excludes the seed)
     };
-  }
 
-  function activePlayers() {
-    return state.players.filter((p) => p.alive);
+    $("#turn-label").textContent = mode === "daily" ? "Daily #" + dailyNumber() : (timed ? "Free Play ⏱️" : "Free Play 🧘");
+    $("#timer-wrap").classList.toggle("hidden", !timed);
+    renderChain();
+    renderTurn();
+    show("screen-game");
+    if (timed) startTimer();
   }
 
   /* ---------- Timer ---------- */
   function startTimer() {
     stopTimer();
-    state.timeLeft = state.seconds;
+    game.timeLeft = game.seconds;
     paintTimer();
-    state.timer = setInterval(() => {
-      state.timeLeft -= 0.1;
-      if (state.timeLeft <= 0) {
-        state.timeLeft = 0;
+    game.timer = setInterval(() => {
+      game.timeLeft -= 0.1;
+      if (game.timeLeft <= 0) {
+        game.timeLeft = 0;
         paintTimer();
         stopTimer();
-        onTimeout();
+        endRun("timeout");
       } else {
         paintTimer();
       }
     }, 100);
   }
   function stopTimer() {
-    if (state.timer) clearInterval(state.timer);
-    state.timer = null;
+    if (game && game.timer) clearInterval(game.timer);
+    if (game) game.timer = null;
   }
   function paintTimer() {
-    const pct = Math.max(0, (state.timeLeft / state.seconds) * 100);
+    const pct = Math.max(0, (game.timeLeft / game.seconds) * 100);
     const bar = $("#timer-bar");
     bar.style.width = pct + "%";
     bar.style.background = pct > 50 ? "var(--ok)" : pct > 22 ? "var(--accent)" : "var(--danger)";
@@ -102,34 +150,13 @@
 
   /* ---------- Rendering ---------- */
   function renderTurn() {
-    const turnLabel = $("#turn-label");
-    if (state.mode === "solo") {
-      turnLabel.textContent = "Solo Endless";
-    } else {
-      turnLabel.textContent = "👉 " + state.players[state.current].name;
-    }
-    $("#chain-count").textContent = state.chain.length;
+    $("#chain-count").textContent = game.score;
+    const badge = $(".letter-badge");
+    $("#required-letter").textContent = game.requiredLetter;
+    badge.classList.remove("pop"); void badge.offsetWidth; badge.classList.add("pop");
 
-    // Prompt: required letter or free start
-    const badge = $("#letter-badge");
-    const hint = $("#prompt-hint");
-    if (state.requiredLetter) {
-      hint.classList.add("hidden");
-      badge.classList.remove("hidden");
-      $("#required-letter").textContent = state.requiredLetter;
-      badge.classList.remove("pop");
-      void badge.offsetWidth; // restart animation
-      badge.classList.add("pop");
-    } else {
-      badge.classList.add("hidden");
-      hint.classList.remove("hidden");
-    }
-
-    // Last played
-    const last = state.chain[state.chain.length - 1];
-    $("#last-played").innerHTML = last
-      ? `last: <b>${escapeHtml(last.name)}</b>`
-      : "";
+    const last = game.chain[game.chain.length - 1];
+    $("#last-played").innerHTML = "after <b>" + escapeHtml(last.name) + "</b>";
 
     $("#guess-input").value = "";
     $("#suggestions").innerHTML = "";
@@ -140,10 +167,14 @@
   function renderChain() {
     const ol = $("#chain-list");
     ol.innerHTML = "";
-    state.chain.forEach((entry, i) => {
+    game.chain.forEach((entry, i) => {
       const li = document.createElement("li");
-      const who = state.mode === "pass" ? `<span class="who">${escapeHtml(entry.who)}</span>` : "";
-      li.innerHTML = `<span class="num">${i + 1}</span><span class="nm">${escapeHtml(entry.name)}</span>${who}`;
+      if (entry.seed) {
+        li.className = "seed";
+        li.innerHTML = '<span class="num">▶</span><span class="nm">' + escapeHtml(entry.name) + '</span><span class="tag">start</span>';
+      } else {
+        li.innerHTML = '<span class="num">' + i + '</span><span class="nm">' + escapeHtml(entry.name) + '</span>';
+      }
       ol.appendChild(li);
     });
   }
@@ -154,267 +185,204 @@
     m.className = "message" + (kind ? " " + kind : "");
   }
 
-  function escapeHtml(s) {
-    return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  }
-
-  /* ---------- Suggestions / autocomplete ---------- */
+  /* ---------- Autocomplete ---------- */
   function renderSuggestions(query) {
     const box = $("#suggestions");
     box.innerHTML = "";
     const q = normalize(query);
     if (!q) return;
-
-    const req = state.requiredLetter; // may be null
+    const req = game.requiredLetter;
     const matches = [];
     for (const name of ALL) {
       const nn = normalize(name);
-      if (state.used.has(nn)) continue;
+      if (game.used.has(nn)) continue;
       if (req && firstLetter(name) !== req) continue;
-      // match on any word starting with the query, or substring
       if (nn.startsWith(q) || nn.split(" ").some((w) => w.startsWith(q)) || nn.includes(q)) {
         matches.push(name);
         if (matches.length >= 6) break;
       }
     }
-
     matches.forEach((name) => {
       const b = document.createElement("button");
-      b.className = "suggestion";
-      b.type = "button";
+      b.className = "suggestion"; b.type = "button";
       b.innerHTML = highlight(name, query);
-      b.addEventListener("click", () => {
-        $("#guess-input").value = name;
-        box.innerHTML = "";
-        submitGuess();
-      });
+      b.addEventListener("click", () => { $("#guess-input").value = name; box.innerHTML = ""; submitGuess(); });
       box.appendChild(b);
     });
   }
-
   function highlight(name, query) {
     const q = normalize(query);
-    const nn = normalize(name);
-    const idx = nn.indexOf(q);
+    const idx = normalize(name).indexOf(q);
     if (idx < 0 || !q) return escapeHtml(name);
-    // map normalized index roughly back to original (same length for our chars)
-    return (
-      escapeHtml(name.slice(0, idx)) +
-      "<mark>" +
-      escapeHtml(name.slice(idx, idx + q.length)) +
-      "</mark>" +
-      escapeHtml(name.slice(idx + q.length))
-    );
+    return escapeHtml(name.slice(0, idx)) + "<mark>" + escapeHtml(name.slice(idx, idx + q.length)) + "</mark>" + escapeHtml(name.slice(idx + q.length));
   }
 
-  /* ---------- Core: submitting a guess ---------- */
+  /* ---------- Submitting ---------- */
   function submitGuess() {
     const raw = $("#guess-input").value.trim();
     if (!raw) return;
     const key = normalize(raw);
 
-    // Must be a known footballer
-    if (!byNorm.has(key)) {
-      setMessage("Hmm, not in our squad list — check the spelling or pick a suggestion.", "bad");
-      return;
-    }
-    // No repeats
-    if (state.used.has(key)) {
-      setMessage("Already used! Pick someone new.", "bad");
-      return;
-    }
+    if (!byNorm.has(key)) { setMessage("Not in our squad list — check the spelling or tap a suggestion.", "bad"); return; }
+    if (game.used.has(key)) { setMessage("Already linked! Pick someone new.", "bad"); return; }
     const display = byNorm.get(key);
-    // Chain rule
-    if (state.requiredLetter && firstLetter(display) !== state.requiredLetter) {
-      setMessage(`Needs to start with “${state.requiredLetter}”.`, "bad");
-      return;
-    }
+    if (firstLetter(display) !== game.requiredLetter) { setMessage("Needs to start with “" + game.requiredLetter + "”.", "bad"); return; }
 
-    // Accept!
-    state.used.add(key);
-    state.chain.push({ name: display, who: state.mode === "pass" ? state.players[state.current].name : "you" });
-    state.requiredLetter = surnameLetter(display);
-
+    // Linked!
+    game.used.add(key);
+    game.chain.push({ name: display });
+    game.requiredLetter = surnameLetter(display);
+    game.score++;
     renderChain();
-    advanceTurn();
-  }
-
-  function advanceTurn() {
-    if (state.mode === "pass") {
-      state.current = nextAliveIndex(state.current);
-    }
     renderTurn();
-    startTimer();
+    if (game.timed) startTimer();
   }
 
-  function nextAliveIndex(from) {
-    const n = state.players.length;
-    for (let step = 1; step <= n; step++) {
-      const idx = (from + step) % n;
-      if (state.players[idx].alive) return idx;
-    }
-    return from;
-  }
-
-  /* ---------- Failure handling ---------- */
-  function onTimeout() {
-    if (state.mode === "solo") {
-      endSolo();
-    } else {
-      // Eliminate current player
-      const out = state.players[state.current];
-      out.alive = false;
-      if (activePlayers().length <= 1) {
-        endPass();
-      } else {
-        flash(`⏰ ${out.name} is out!`, () => advanceTurn());
-      }
-    }
-  }
-
-  function flash(text, then) {
-    setMessage(text, "bad");
+  /* ---------- Ending a run ---------- */
+  function endRun(reason) {
     stopTimer();
-    setTimeout(then, 1100);
-  }
+    const score = game.score;
 
-  function endSolo() {
-    stopTimer();
-    const score = state.chain.length;
-    const best = getBest();
-    const isBest = score > best;
-    if (isBest) setBest(score);
-
-    $("#over-emoji").textContent = score >= 15 ? "🏆" : score >= 8 ? "🔥" : "🏁";
-    $("#over-title").textContent = "Chain broken!";
-    $("#over-detail").textContent =
-      score === 0 ? "Ran out of time on the first one — happens to the best." : "Time ran out. Nice run!";
-    $("#over-score").textContent = score;
-    $("#over-newbest").classList.toggle("hidden", !isBest);
-    show("screen-over");
-  }
-
-  function endPass() {
-    stopTimer();
-    const winner = activePlayers()[0];
-    $("#over-emoji").textContent = "🏆";
-    $("#over-title").textContent = winner ? `${winner.name} wins!` : "Match over";
-    $("#over-detail").textContent = `Chain reached ${state.chain.length} names.`;
-    $("#over-score").textContent = state.chain.length;
-    $("#over-newbest").classList.add("hidden");
-    show("screen-over");
-  }
-
-  /* ---------- Starting games ---------- */
-  function startSolo() {
-    state = newState("solo", [{ name: "you", alive: true }], 15);
-    beginGame();
-  }
-
-  function startPass() {
-    const names = $$("#player-list .player-chip").map((c) => c.dataset.name);
-    if (names.length < 2) return;
-    const secs = parseInt($("#setup-timer").value, 10);
-    state = newState("pass", names.map((n) => ({ name: n, alive: true })), secs);
-    beginGame();
-  }
-
-  function beginGame() {
-    $("#chain-list").innerHTML = "";
-    show("screen-game");
-    renderTurn();
-    renderChain();
-    startTimer();
-  }
-
-  /* ---------- Pass & play setup screen ---------- */
-  let setupPlayers = ["Player 1", "Player 2"];
-
-  function renderSetup() {
-    const list = $("#player-list");
-    list.innerHTML = "";
-    setupPlayers.forEach((name, i) => {
-      const chip = document.createElement("div");
-      chip.className = "player-chip";
-      chip.dataset.name = name;
-      chip.innerHTML = `<span>${escapeHtml(name)}</span>`;
-      const del = document.createElement("button");
-      del.type = "button";
-      del.textContent = "✕";
-      del.setAttribute("aria-label", "Remove " + name);
-      del.addEventListener("click", () => {
-        setupPlayers.splice(i, 1);
-        renderSetup();
+    if (game.mode === "daily") {
+      recordDaily(score);
+      showResult({
+        emoji: score >= 15 ? "🏆" : score >= 8 ? "🔥" : "🏁",
+        title: reason === "timeout" ? "Time's up!" : "Run ended",
+        detail: "Daily #" + dailyNumber() + " complete.",
+        score,
+        scoreLabel: "names linked",
+        share: true,
+        again: false,
       });
-      chip.appendChild(del);
-      list.appendChild(chip);
-    });
-    $("#start-pass").disabled = setupPlayers.length < 2;
-    $("#add-player").disabled = setupPlayers.length >= 6;
-    $("#new-player-name").disabled = setupPlayers.length >= 6;
+    } else {
+      const isBest = score > (store.bestChain || 0);
+      if (isBest) { store.bestChain = score; saveStore(); }
+      showResult({
+        emoji: score >= 15 ? "🏆" : score >= 8 ? "🔥" : "🏁",
+        title: isBest ? "New best chain!" : (reason === "timeout" ? "Time's up!" : "Run ended"),
+        detail: isBest ? "Your longest chain yet." : "Best chain: " + (store.bestChain || 0),
+        score,
+        scoreLabel: "names linked",
+        share: false,
+        again: true,
+      });
+    }
   }
 
-  function addPlayer() {
-    const input = $("#new-player-name");
-    const name = input.value.trim();
-    if (!name || setupPlayers.length >= 6) return;
-    setupPlayers.push(name);
-    input.value = "";
-    renderSetup();
-    input.focus();
+  function recordDaily(score) {
+    const today = todayStr();
+    if (store.lastDaily !== today) {
+      store.streak = store.lastDaily === yesterdayStr() ? (store.streak || 0) + 1 : 1;
+      store.lastDaily = today;
+    }
+    store.todayResult = { date: today, day: dailyNumber(), score };
+    if (score > (store.bestDaily || 0)) store.bestDaily = score;
+    saveStore();
   }
 
-  /* ---------- Wire up events ---------- */
+  /* ---------- Result screen ---------- */
+  function showResult(o) {
+    $("#result-emoji").textContent = o.emoji;
+    $("#result-title").textContent = o.title;
+    $("#result-detail").textContent = o.detail;
+    $("#result-score").textContent = o.score;
+    $("#result-scorelabel").textContent = o.scoreLabel;
+
+    $("#result-share").classList.toggle("hidden", !o.share);
+    if (o.share) { $("#share-text").textContent = shareText(); $("#copy-confirm").classList.add("hidden"); }
+
+    $("#result-again").classList.toggle("hidden", !o.again);
+    show("screen-result");
+  }
+
+  function shareText() {
+    const r = store.todayResult;
+    return "Link It FC ⚽ #" + r.day + "\n🔗×" + r.score + "  ⏱️60s  🔥" + currentStreak() + "\nCan you link it?";
+  }
+
+  async function shareResult() {
+    const text = shareText();
+    if (navigator.share) {
+      try { await navigator.share({ text }); return; } catch (e) { /* fall through to copy */ }
+    }
+    copyToClipboard(text);
+  }
+  async function copyToClipboard(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch (e) {
+      const ta = document.createElement("textarea");
+      ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); } catch (e2) {}
+      document.body.removeChild(ta);
+    }
+    $("#copy-confirm").classList.remove("hidden");
+  }
+
+  /* ---------- Home rendering ---------- */
+  function renderHome() {
+    $("#home-streak").textContent = currentStreak();
+    $("#home-best").textContent = store.bestChain || 0;
+    $("#free-best").textContent = store.bestChain || 0;
+
+    const done = dailyDoneToday();
+    const title = $("#daily-title");
+    const sub = $("#daily-sub");
+    const btn = $("#play-daily");
+    if (done) {
+      title.textContent = "Daily #" + dailyNumber() + " ✓";
+      sub.textContent = "Done today · tap for result";
+      btn.classList.add("done");
+    } else {
+      title.textContent = "Today's Challenge";
+      sub.textContent = "Daily #" + dailyNumber() + " · 60s per name";
+      btn.classList.remove("done");
+    }
+  }
+
+  /* ---------- Wire up ---------- */
   function init() {
-    $("#home-highscore").textContent = getBest();
+    renderHome();
 
-    // Menu mode buttons
-    $$("[data-mode]").forEach((btn) =>
-      btn.addEventListener("click", () => {
-        if (btn.dataset.mode === "solo") startSolo();
-        else {
-          renderSetup();
-          show("screen-setup");
-        }
-      })
-    );
+    $("#play-daily").addEventListener("click", () => {
+      if (dailyDoneToday()) {
+        // Show the locked result + share card again (no replay).
+        showResult({
+          emoji: store.todayResult.score >= 15 ? "🏆" : store.todayResult.score >= 8 ? "🔥" : "🏁",
+          title: "Daily #" + store.todayResult.day + " done",
+          detail: "Come back tomorrow for a new starter.",
+          score: store.todayResult.score,
+          scoreLabel: "names linked",
+          share: true,
+          again: false,
+        });
+      } else {
+        startGame("daily", true);
+      }
+    });
 
-    // Back / nav buttons
-    $$("[data-go]").forEach((btn) =>
-      btn.addEventListener("click", () => {
-        if (state) stopTimer();
-        if (btn.dataset.go === "home") $("#home-highscore").textContent = getBest();
-        show("screen-" + btn.dataset.go);
-      })
-    );
+    $("#play-free").addEventListener("click", () => { renderHome(); show("screen-free"); });
+    $$("[data-free]").forEach((b) => b.addEventListener("click", () => startGame("free", b.dataset.free === "timed")));
 
     $("#how-to-btn").addEventListener("click", () => show("screen-how"));
 
-    // Setup
-    $("#add-player").addEventListener("click", addPlayer);
-    $("#new-player-name").addEventListener("keydown", (e) => {
-      if (e.key === "Enter") { e.preventDefault(); addPlayer(); }
-    });
-    $("#start-pass").addEventListener("click", startPass);
-    $("#setup-timer"); // value read at start
+    $$("[data-go]").forEach((b) => b.addEventListener("click", () => {
+      stopTimer();
+      if (b.dataset.go === "home") renderHome();
+      show("screen-" + b.dataset.go);
+    }));
 
-    // Game
     const input = $("#guess-input");
     input.addEventListener("input", () => renderSuggestions(input.value));
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") { e.preventDefault(); submitGuess(); }
-    });
+    input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); submitGuess(); } });
     $("#submit-guess").addEventListener("click", submitGuess);
-    $("#giveup").addEventListener("click", () => {
-      if (state.mode === "solo") endSolo();
-      else onTimeout();
-    });
+    $("#giveup").addEventListener("click", () => endRun("giveup"));
 
-    // Game over
-    $("#play-again").addEventListener("click", () => {
-      if (!state) return show("screen-home");
-      if (state.mode === "solo") startSolo();
-      else { renderSetup(); show("screen-setup"); }
+    $("#copy-share").addEventListener("click", shareResult);
+    $("#result-again").addEventListener("click", () => {
+      if (game && game.mode === "free") startGame("free", game.timed);
+      else { renderHome(); show("screen-free"); }
     });
 
     show("screen-home");
