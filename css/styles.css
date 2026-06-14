@@ -1,0 +1,189 @@
+/* ===========================================================
+   Footy Chain — mobile-first styles
+   =========================================================== */
+:root {
+  --pitch: #0b6e3b;
+  --pitch-dark: #08562e;
+  --pitch-darker: #063f22;
+  --line: rgba(255, 255, 255, 0.18);
+  --ink: #f3fff7;
+  --muted: #a7d9bd;
+  --accent: #ffd23f;
+  --accent-ink: #1a1400;
+  --danger: #ff5a5a;
+  --ok: #5dffa0;
+  --card: rgba(0, 0, 0, 0.22);
+  --radius: 16px;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body { height: 100%; margin: 0; }
+
+body {
+  font-family: var(--font);
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 50% -10%, var(--pitch) 0%, var(--pitch-dark) 55%, var(--pitch-darker) 100%);
+  background-attachment: fixed;
+  overflow-x: hidden;
+}
+
+/* faint pitch stripes */
+body::before {
+  content: "";
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(
+    180deg, transparent 0 64px, rgba(255,255,255,0.025) 64px 128px);
+  pointer-events: none; z-index: 0;
+}
+
+#app {
+  position: relative; z-index: 1;
+  max-width: 460px;
+  margin: 0 auto;
+  min-height: 100%;
+  padding: max(18px, env(safe-area-inset-top)) 18px max(18px, env(safe-area-inset-bottom));
+  display: flex; flex-direction: column;
+}
+
+/* ---------- Screens ---------- */
+.screen { display: none; flex: 1; flex-direction: column; animation: fade .25s ease; }
+.screen.active { display: flex; }
+@keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+h1, h2 { margin: 0; font-weight: 800; letter-spacing: -0.5px; }
+.muted { color: var(--muted); }
+
+/* ---------- Buttons ---------- */
+.btn {
+  font-family: inherit; font-size: 1rem; font-weight: 700;
+  border: none; border-radius: var(--radius);
+  padding: 16px 18px; cursor: pointer; color: var(--ink);
+  background: var(--card); width: 100%;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  transition: transform .08s ease, filter .15s ease;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary { background: var(--accent); color: var(--accent-ink); }
+.btn-primary:disabled { opacity: .45; cursor: not-allowed; }
+.btn-ghost { background: transparent; border: 1.5px solid var(--line); }
+.btn-small { width: auto; padding: 14px 18px; }
+.btn-title { font-size: 1.15rem; }
+.btn-sub { font-size: .8rem; font-weight: 600; opacity: .75; }
+
+.back {
+  align-self: flex-start; background: none; border: none; color: var(--muted);
+  font-size: 1rem; font-weight: 600; padding: 6px 0; cursor: pointer; font-family: inherit;
+}
+
+/* ---------- Home ---------- */
+.hero { text-align: center; margin: 6vh 0 4vh; }
+.ball { font-size: 3.4rem; animation: spin 9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.hero h1 { font-size: 2.8rem; margin-top: 4px; }
+.tagline { color: var(--muted); margin: 14px auto 0; max-width: 320px; line-height: 1.4; }
+.menu { display: flex; flex-direction: column; gap: 12px; margin-top: auto; }
+.hi { text-align: center; color: var(--muted); margin: 18px 0 6px; }
+.hi strong { color: var(--accent); }
+.credit { text-align: center; color: var(--muted); font-size: .78rem; opacity: .7; margin-top: 4px; }
+
+/* ---------- Setup ---------- */
+#screen-setup h2 { margin-top: 8px; }
+.player-list { display: flex; flex-direction: column; gap: 8px; margin: 16px 0; }
+.player-chip {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--card); border-radius: 12px; padding: 12px 14px; font-weight: 600;
+}
+.player-chip button {
+  background: none; border: none; color: var(--danger); font-size: 1.2rem;
+  cursor: pointer; line-height: 1; padding: 0 4px;
+}
+.add-row { display: flex; gap: 8px; margin-bottom: 18px; }
+.add-row input { flex: 1; }
+input, select {
+  font-family: inherit; font-size: 1rem; color: var(--ink);
+  background: rgba(0,0,0,0.28); border: 1.5px solid var(--line);
+  border-radius: 12px; padding: 14px; width: 100%;
+}
+input::placeholder { color: rgba(167,217,189,0.6); }
+input:focus, select:focus { outline: none; border-color: var(--accent); }
+select { appearance: none; }
+.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; font-weight: 600; }
+.field span { color: var(--muted); font-size: .85rem; }
+#start-pass { margin-top: auto; }
+
+/* ---------- Game ---------- */
+.game-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.turn-label {
+  font-weight: 800; font-size: 1.05rem; text-align: center; flex: 1;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.score-pill { background: var(--card); border-radius: 999px; padding: 7px 13px; font-weight: 700; font-size: .95rem; }
+
+.timer-wrap { height: 8px; background: rgba(0,0,0,0.3); border-radius: 999px; overflow: hidden; margin: 14px 0; }
+.timer-bar { height: 100%; width: 100%; background: var(--ok); border-radius: 999px; transition: width .25s linear, background .25s ease; }
+
+.play-area { display: flex; flex-direction: column; }
+.prompt { text-align: center; min-height: 96px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.prompt-hint { color: var(--muted); max-width: 280px; line-height: 1.35; }
+.letter-badge { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.letter-badge-label { color: var(--muted); font-size: .8rem; text-transform: uppercase; letter-spacing: 2px; }
+.letter-badge-letter {
+  font-size: 4.5rem; font-weight: 900; line-height: 1; color: var(--accent);
+  text-shadow: 0 4px 18px rgba(255,210,63,0.35);
+}
+.letter-badge.pop { animation: pop .35s ease; }
+@keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 60% { transform: scale(1.12); } 100% { transform: scale(1); opacity: 1; } }
+
+.last-played { text-align: center; color: var(--muted); font-size: .9rem; min-height: 22px; margin-bottom: 8px; }
+.last-played b { color: var(--ink); }
+
+.input-zone { position: relative; }
+#guess-input { font-size: 1.1rem; text-align: center; }
+
+.suggestions { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+.suggestion {
+  background: var(--card); border: none; color: var(--ink); text-align: left;
+  padding: 12px 14px; border-radius: 10px; font-size: 1rem; font-family: inherit;
+  cursor: pointer; font-weight: 600;
+}
+.suggestion:active { background: rgba(255,255,255,0.12); }
+.suggestion mark { background: none; color: var(--accent); font-weight: 800; }
+
+.message { min-height: 22px; text-align: center; font-weight: 600; font-size: .92rem; margin: 8px 0; }
+.message.bad { color: var(--danger); }
+.message.good { color: var(--ok); }
+
+.actions { display: flex; gap: 10px; margin-top: 6px; }
+.actions .btn { flex: 1; flex-direction: row; }
+
+/* ---------- Chain history ---------- */
+.chain-history { margin-top: 18px; }
+.chain-history-title { color: var(--muted); font-size: .8rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; }
+#chain-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column-reverse; gap: 6px; max-height: 30vh; overflow-y: auto; }
+#chain-list li {
+  background: var(--card); border-radius: 10px; padding: 10px 12px; display: flex; gap: 10px; align-items: baseline;
+  animation: slidein .25s ease;
+}
+@keyframes slidein { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: none; } }
+#chain-list .num { color: var(--muted); font-size: .8rem; min-width: 22px; }
+#chain-list .nm { font-weight: 600; }
+#chain-list .who { margin-left: auto; color: var(--accent); font-size: .78rem; font-weight: 700; }
+
+/* ---------- Game over ---------- */
+#screen-over { justify-content: center; }
+.over-card { background: var(--card); border-radius: 20px; padding: 28px 22px; text-align: center; }
+.over-emoji { font-size: 3.4rem; }
+.big-score { font-size: 4rem; font-weight: 900; color: var(--accent); line-height: 1.1; margin: 8px 0; }
+.newbest { color: var(--ok); font-weight: 800; }
+.over-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
+
+/* ---------- How to play ---------- */
+.how { line-height: 1.6; }
+.how p { margin: 10px 0; }
+.how ul { padding-left: 20px; line-height: 1.7; }
+.how u { text-decoration-color: var(--accent); text-decoration-thickness: 3px; }
+
+.hidden { display: none !important; }

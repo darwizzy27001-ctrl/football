@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0b6e3b" />
+  <title>Footy Chain ⚽ — the footballer name game</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="app">
+
+    <!-- ============ HOME / MENU ============ -->
+    <section id="screen-home" class="screen active">
+      <header class="hero">
+        <div class="ball">⚽</div>
+        <h1>Footy&nbsp;Chain</h1>
+        <p class="tagline">Name a footballer. The first letter of their surname starts the next one. How long can the chain go?</p>
+      </header>
+
+      <div class="menu">
+        <button class="btn btn-primary" data-mode="solo">
+          <span class="btn-title">Solo Endless</span>
+          <span class="btn-sub">Beat your longest chain</span>
+        </button>
+        <button class="btn btn-primary" data-mode="pass">
+          <span class="btn-title">Pass &amp; Play</span>
+          <span class="btn-sub">2–6 players, one phone</span>
+        </button>
+        <button class="btn btn-ghost" id="how-to-btn">How to play</button>
+      </div>
+
+      <p class="hi">Best chain: <strong id="home-highscore">0</strong></p>
+      <footer class="credit">First letter of the surname → starts the next name.</footer>
+    </section>
+
+    <!-- ============ SETUP (pass & play) ============ -->
+    <section id="screen-setup" class="screen">
+      <button class="back" data-go="home">‹ Back</button>
+      <h2>Pass &amp; Play</h2>
+      <p class="muted">Add players, then pass the phone each turn.</p>
+
+      <div id="player-list" class="player-list"></div>
+      <div class="add-row">
+        <input id="new-player-name" type="text" placeholder="Player name" maxlength="16" autocomplete="off" />
+        <button id="add-player" class="btn btn-small">Add</button>
+      </div>
+
+      <label class="field">
+        <span>Seconds per turn</span>
+        <select id="setup-timer">
+          <option value="10">10s — ruthless</option>
+          <option value="15" selected>15s — classic</option>
+          <option value="20">20s — relaxed</option>
+          <option value="30">30s — chilled</option>
+        </select>
+      </label>
+
+      <button id="start-pass" class="btn btn-primary" disabled>Start match</button>
+    </section>
+
+    <!-- ============ GAME ============ -->
+    <section id="screen-game" class="screen">
+      <div class="game-top">
+        <button class="back" data-go="home">‹ Quit</button>
+        <div id="turn-label" class="turn-label">Solo</div>
+        <div id="score-pill" class="score-pill">⛓ <span id="chain-count">0</span></div>
+      </div>
+
+      <div class="timer-wrap">
+        <div id="timer-bar" class="timer-bar"></div>
+      </div>
+
+      <div class="play-area">
+        <div class="prompt">
+          <div id="prompt-hint" class="prompt-hint">Name any footballer to start the chain</div>
+          <div id="letter-badge" class="letter-badge hidden">
+            <span class="letter-badge-label">starts with</span>
+            <span id="required-letter" class="letter-badge-letter">?</span>
+          </div>
+        </div>
+
+        <div class="last-played" id="last-played"></div>
+
+        <div class="input-zone">
+          <input id="guess-input" type="text" placeholder="Type a footballer…"
+                 autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" />
+          <div id="suggestions" class="suggestions"></div>
+          <div id="message" class="message"></div>
+          <div class="actions">
+            <button id="submit-guess" class="btn btn-primary">Enter</button>
+            <button id="giveup" class="btn btn-ghost">Give up</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="chain-history">
+        <div class="chain-history-title">Chain</div>
+        <ol id="chain-list"></ol>
+      </div>
+    </section>
+
+    <!-- ============ GAME OVER ============ -->
+    <section id="screen-over" class="screen">
+      <div class="over-card">
+        <div id="over-emoji" class="over-emoji">🏁</div>
+        <h2 id="over-title">Game over</h2>
+        <p id="over-detail" class="muted"></p>
+        <div id="over-score" class="big-score"></div>
+        <p id="over-newbest" class="newbest hidden">🎉 New best chain!</p>
+        <div class="over-actions">
+          <button id="play-again" class="btn btn-primary">Play again</button>
+          <button class="btn btn-ghost" data-go="home">Home</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ HOW TO PLAY ============ -->
+    <section id="screen-how" class="screen">
+      <button class="back" data-go="home">‹ Back</button>
+      <h2>How to play</h2>
+      <div class="how">
+        <p>One player names a footballer, e.g. <strong>David <u>B</u>eckham</strong>.</p>
+        <p>The first letter of the <em>surname</em> ( <strong>B</strong> ) starts the next name: <strong><u>B</u>ryan Robson</strong>.</p>
+        <p>Then <strong>R</strong>obson → <strong><u>R</u>ob Green</strong>, then <strong>G</strong>reen → and so on…</p>
+        <ul>
+          <li>No repeats — each footballer can only be used once.</li>
+          <li>Beat the clock: run out of time and the chain breaks.</li>
+          <li><strong>Solo</strong>: keep your own chain alive as long as possible.</li>
+          <li><strong>Pass &amp; Play</strong>: time out and you're knocked out. Last one standing wins.</li>
+        </ul>
+      </div>
+      <button class="btn btn-primary" data-go="home">Got it</button>
+    </section>
+
+  </div>
+
+  <script src="js/players.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
