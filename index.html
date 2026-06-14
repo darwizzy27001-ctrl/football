@@ -27,7 +27,7 @@
       <div class="menu">
         <button class="btn btn-primary" id="play-daily">
           <span class="btn-title" id="daily-title">Today's Challenge</span>
-          <span class="btn-sub" id="daily-sub">Daily · 60s per name</span>
+          <span class="btn-sub" id="daily-sub">Daily · 30s per name</span>
         </button>
         <button class="btn btn-ghost" id="play-free">
           <span class="btn-title">Free Play</span>
@@ -48,7 +48,7 @@
       <div class="choice-list">
         <button class="btn btn-primary choice" data-free="timed">
           <span class="btn-title">⏱️ Timed</span>
-          <span class="btn-sub">60 seconds per name</span>
+          <span class="btn-sub">30 seconds per name</span>
         </button>
         <button class="btn btn-primary choice" data-free="zen">
           <span class="btn-title">🧘 No timer</span>
@@ -67,8 +67,11 @@
         <div id="score-pill" class="score-pill">🔗 <span id="chain-count">0</span></div>
       </div>
 
-      <div class="timer-wrap" id="timer-wrap">
-        <div id="timer-bar" class="timer-bar"></div>
+      <div class="timer-row" id="timer-wrap">
+        <div class="timer-track">
+          <div id="timer-bar" class="timer-bar"></div>
+        </div>
+        <span id="timer-text" class="timer-text">30s</span>
       </div>
 
       <div class="play-area">
@@ -131,7 +134,7 @@
         <ul>
           <li>No repeats — each footballer can only be linked once.</li>
           <li>We're the ref: we check the name's real and the letter fits.</li>
-          <li><strong>Timed:</strong> 60 seconds per name. Blank for too long and the run ends.</li>
+          <li><strong>Timed:</strong> 30 seconds per name. Blank for too long and the run ends.</li>
           <li><strong>Today's Challenge:</strong> the same starter for everyone, one go a day. Play daily to build your 🔥 streak.</li>
         </ul>
       </div>

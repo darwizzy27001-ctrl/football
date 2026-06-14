@@ -20,16 +20,16 @@ A self-contained, mobile-first web app. No build step, no install.
 ## Modes
 
 - **Today's Challenge** 📅 — everyone gets the **same starting footballer**
-  each day. One timed attempt (60s per name). Play every day to build your
+  each day. One timed attempt (30s per name). Play every day to build your
   🔥 **streak**, then share a spoiler-free result card.
-- **Free Play** 🎮 — practice anytime. Choose **Timed** (60s per name) or
+- **Free Play** 🎮 — practice anytime. Choose **Timed** (30s per name) or
   **No timer (zen)**, and chase your best-ever chain.
 
 ## Rules the app enforces for you
 
 - The next name must start with the **first letter of the previous surname**.
 - **No repeats** — every footballer can be linked only once.
-- **Timed:** 60 seconds per name. Blank for a full minute and the run ends.
+- **Timed:** 30 seconds per name. Blank for too long and the run ends.
 - The app is the **referee** — names are checked against a built-in database.
   Accents are forgiven (type *Ozil* or *Özil*), but there are **no hints or
   autocomplete**: you have to know the player and spell the name yourself.
@@ -40,7 +40,7 @@ After the Daily, copy a Wordle-style result to brag with — no spoilers:
 
 ```
 Link It FC ⚽ #142
-🔗×14  ⏱️60s  🔥5
+🔗×14  ⏱️30s  🔥5
 Can you link it?
 ```
 

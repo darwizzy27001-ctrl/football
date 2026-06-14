@@ -111,8 +111,8 @@
     game = {
       mode,            // "daily" | "free"
       timed,           // boolean
-      seconds: 60,
-      timeLeft: 60,
+      seconds: 30,
+      timeLeft: 30,
       timer: null,
       seed,
       used: new Set([normalize(seed)]),
@@ -152,9 +152,13 @@
   }
   function paintTimer() {
     const pct = Math.max(0, (game.timeLeft / game.seconds) * 100);
+    const colour = pct > 50 ? "var(--ok)" : pct > 22 ? "var(--accent)" : "var(--danger)";
     const bar = $("#timer-bar");
     bar.style.width = pct + "%";
-    bar.style.background = pct > 50 ? "var(--ok)" : pct > 22 ? "var(--accent)" : "var(--danger)";
+    bar.style.background = colour;
+    const text = $("#timer-text");
+    text.textContent = Math.ceil(game.timeLeft) + "s";
+    text.style.color = colour;
   }
 
   /* ---------- Rendering ---------- */
@@ -273,7 +277,7 @@
 
   function shareText() {
     const r = store.todayResult;
-    return "Link It FC ⚽ #" + r.day + "\n🔗×" + r.score + "  ⏱️60s  🔥" + currentStreak() + "\nCan you link it?";
+    return "Link It FC ⚽ #" + r.day + "\n🔗×" + r.score + "  ⏱️30s  🔥" + currentStreak() + "\nCan you link it?";
   }
 
   async function shareResult() {
@@ -312,7 +316,7 @@
       btn.classList.add("done");
     } else {
       title.textContent = "Today's Challenge";
-      sub.textContent = "Daily #" + dailyNumber() + " · 60s per name";
+      sub.textContent = "Daily #" + dailyNumber() + " · 30s per name";
       btn.classList.remove("done");
     }
   }

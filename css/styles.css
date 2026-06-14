@@ -98,8 +98,10 @@ h1, h2 { margin: 0; font-weight: 800; letter-spacing: -0.5px; }
 .turn-label { font-weight: 800; font-size: 1.05rem; text-align: center; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .score-pill { background: var(--card); border-radius: 999px; padding: 7px 13px; font-weight: 700; font-size: .95rem; }
 
-.timer-wrap { height: 8px; background: rgba(0,0,0,0.3); border-radius: 999px; overflow: hidden; margin: 14px 0; }
+.timer-row { display: flex; align-items: center; gap: 12px; margin: 14px 0; }
+.timer-track { flex: 1; height: 8px; background: rgba(0,0,0,0.3); border-radius: 999px; overflow: hidden; }
 .timer-bar { height: 100%; width: 100%; background: var(--ok); border-radius: 999px; transition: width .25s linear, background .25s ease; }
+.timer-text { font-weight: 800; font-variant-numeric: tabular-nums; min-width: 42px; text-align: right; font-size: 1.05rem; color: var(--ok); transition: color .25s ease; }
 
 .play-area { display: flex; flex-direction: column; }
 .prompt { text-align: center; min-height: 96px; display: flex; align-items: center; justify-content: center; }
