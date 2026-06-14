@@ -30,9 +30,9 @@ A self-contained, mobile-first web app. No build step, no install.
 - The next name must start with the **first letter of the previous surname**.
 - **No repeats** — every footballer can be linked only once.
 - **Timed:** 60 seconds per name. Blank for a full minute and the run ends.
-- The app is the **referee** — names are checked against a built-in database,
-  so spelling and accents (e.g. *Özil*, *Agüero*) are handled, with
-  autocomplete to keep it fast on a touchscreen.
+- The app is the **referee** — names are checked against a built-in database.
+  Accents are forgiven (type *Ozil* or *Özil*), but there are **no hints or
+  autocomplete**: you have to know the player and spell the name yourself.
 
 ## Share card
 

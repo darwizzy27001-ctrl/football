@@ -122,11 +122,6 @@ input, select {
 input::placeholder { color: rgba(167,217,189,0.6); }
 input:focus { outline: none; border-color: var(--accent); }
 
-.suggestions { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
-.suggestion { background: var(--card); border: none; color: var(--ink); text-align: left; padding: 12px 14px; border-radius: 10px; font-size: 1rem; font-family: inherit; cursor: pointer; font-weight: 600; }
-.suggestion:active { background: rgba(255,255,255,0.12); }
-.suggestion mark { background: none; color: var(--accent); font-weight: 800; }
-
 .message { min-height: 22px; text-align: center; font-weight: 600; font-size: .92rem; margin: 8px 0; }
 .message.bad { color: var(--danger); }
 .message.good { color: var(--ok); }

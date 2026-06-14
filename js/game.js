@@ -159,7 +159,6 @@
     $("#last-played").innerHTML = "after <b>" + escapeHtml(last.name) + "</b>";
 
     $("#guess-input").value = "";
-    $("#suggestions").innerHTML = "";
     setMessage("", "");
     $("#guess-input").focus();
   }
@@ -185,45 +184,13 @@
     m.className = "message" + (kind ? " " + kind : "");
   }
 
-  /* ---------- Autocomplete ---------- */
-  function renderSuggestions(query) {
-    const box = $("#suggestions");
-    box.innerHTML = "";
-    const q = normalize(query);
-    if (!q) return;
-    const req = game.requiredLetter;
-    const matches = [];
-    for (const name of ALL) {
-      const nn = normalize(name);
-      if (game.used.has(nn)) continue;
-      if (req && firstLetter(name) !== req) continue;
-      if (nn.startsWith(q) || nn.split(" ").some((w) => w.startsWith(q)) || nn.includes(q)) {
-        matches.push(name);
-        if (matches.length >= 6) break;
-      }
-    }
-    matches.forEach((name) => {
-      const b = document.createElement("button");
-      b.className = "suggestion"; b.type = "button";
-      b.innerHTML = highlight(name, query);
-      b.addEventListener("click", () => { $("#guess-input").value = name; box.innerHTML = ""; submitGuess(); });
-      box.appendChild(b);
-    });
-  }
-  function highlight(name, query) {
-    const q = normalize(query);
-    const idx = normalize(name).indexOf(q);
-    if (idx < 0 || !q) return escapeHtml(name);
-    return escapeHtml(name.slice(0, idx)) + "<mark>" + escapeHtml(name.slice(idx, idx + q.length)) + "</mark>" + escapeHtml(name.slice(idx + q.length));
-  }
-
   /* ---------- Submitting ---------- */
   function submitGuess() {
     const raw = $("#guess-input").value.trim();
     if (!raw) return;
     const key = normalize(raw);
 
-    if (!byNorm.has(key)) { setMessage("Not in our squad list — check the spelling or tap a suggestion.", "bad"); return; }
+    if (!byNorm.has(key)) { setMessage("Not in our squad list — check the spelling, or it's someone we don't know.", "bad"); return; }
     if (game.used.has(key)) { setMessage("Already linked! Pick someone new.", "bad"); return; }
     const display = byNorm.get(key);
     if (firstLetter(display) !== game.requiredLetter) { setMessage("Needs to start with “" + game.requiredLetter + "”.", "bad"); return; }
@@ -374,7 +341,6 @@
     }));
 
     const input = $("#guess-input");
-    input.addEventListener("input", () => renderSuggestions(input.value));
     input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); submitGuess(); } });
     $("#submit-guess").addEventListener("click", submitGuess);
     $("#giveup").addEventListener("click", () => endRun("giveup"));
