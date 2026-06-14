@@ -79,6 +79,7 @@ h1, h2 { margin: 0; font-weight: 800; letter-spacing: -0.5px; }
 .hero h1 { font-size: 2.9rem; margin-top: 4px; }
 .hero h1 .fc { color: var(--accent); }
 .tagline { color: var(--accent); font-weight: 700; font-size: 1.15rem; margin: 10px 0 0; }
+.subtagline { color: var(--muted); font-size: .9rem; line-height: 1.45; margin: 8px auto 0; max-width: 320px; }
 
 .stats { display: flex; gap: 12px; margin: 4px 0 26px; }
 .stat { flex: 1; background: var(--card); border-radius: 14px; padding: 14px; text-align: center; }
